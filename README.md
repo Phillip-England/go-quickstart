@@ -92,6 +92,12 @@ middleware.Chain(w, r, templates, HandlerHome, middleware.HelloWorld)
 
 That's it! You've created a new custom middleware and added it to the "/" endpoint.
 
+Serve the application with `go run main.go` and visit localhost:8080. You should see the following output printed to the console:
+
+```bash
+Hello, World
+```
+
 ### Middleware Errors
 
 If a middleware returns an error, it will be handled in the `Chain` func. This enables you to stop execution and handle errors with ease.
