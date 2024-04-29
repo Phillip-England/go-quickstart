@@ -19,13 +19,16 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
 		middleware.Chain(w, r, templates, HandlerHome)
 	})
 
 	fmt.Println("Running Development Server on localhost:" + port)
 	http.ListenAndServe(":"+port, mux)
-
 }
 
 func HandlerHome(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
