@@ -2,6 +2,37 @@
 
 go-quickstart is intended to get you a Go server ASAP.
 
+## Requirements
+
+go-quickstart requires Go version 1.22.0 or greater
+
+## Installation
+
+To install go-quickstart, do the following:
+
+1. Create a directory
+
+```bash
+mkdir myapp
+cd myapp
+```
+
+2. Clone the repo
+
+```bash
+git clone https://github.com/phillip-england/go-quickstart .
+```
+
+3. Run the server
+
+```bash
+go run main.go
+```
+
+4. Visit localhost:8080
+
+That's it, you're up and running!
+
 ## Serving
 
 To serve the application, simply run:
