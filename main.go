@@ -54,7 +54,8 @@ func HandleStatic(customContext *middleware.CustomContext, w http.ResponseWriter
 
 func HandleHome(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 	err := customContext.Templates.ExecuteTemplate(w, "base.html", stypes.BasePageData{
-		Title: "Home",
+		Title:   "Home",
+		Content: filehandler.ExecuteTemplate(customContext.Templates, "hello-world.html", nil),
 	})
 	if err != nil {
 		fmt.Println(err)
