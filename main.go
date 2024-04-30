@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"hotswap/internal/filehandler"
-	"hotswap/internal/middleware"
-	"hotswap/internal/stypes"
+	"go-quickstart/internal/filehandler"
+	"go-quickstart/internal/middleware"
+	"go-quickstart/internal/stypes"
 	"net/http"
 )
 
