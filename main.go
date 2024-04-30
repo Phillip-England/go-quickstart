@@ -6,6 +6,7 @@ import (
 	"go-quickstart/internal/middleware"
 	"go-quickstart/internal/stypes"
 	"net/http"
+	"path/filepath"
 )
 
 func main() {
@@ -24,14 +25,34 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
-		middleware.Chain(w, r, templates, HandlerHome)
+		middleware.Chain(w, r, templates, HandleHome)
+	})
+
+	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		middleware.Chain(w, r, templates, HandleFavicon)
+	})
+
+	mux.HandleFunc("GET /static/", func(w http.ResponseWriter, r *http.Request) {
+		middleware.Chain(w, r, templates, HandleStatic)
 	})
 
 	fmt.Println("Running Development Server on localhost:" + port)
 	http.ListenAndServe(":"+port, mux)
 }
 
-func HandlerHome(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+func HandleFavicon(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+	filePath := "favicon.ico"
+	fullPath := filepath.Join(".", ".", filePath)
+	http.ServeFile(w, r, fullPath)
+}
+
+func HandleStatic(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+	filePath := r.URL.Path[len("/static/"):]
+	fullPath := filepath.Join(".", "static", filePath)
+	http.ServeFile(w, r, fullPath)
+}
+
+func HandleHome(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
 	err := customContext.Templates.ExecuteTemplate(w, "base.html", stypes.BasePageData{
 		Title: "Home",
 	})
