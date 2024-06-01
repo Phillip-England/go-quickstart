@@ -1,174 +1,96 @@
 # go-quickstart
-
-go-quickstart is intended to get you a Go server ASAP.
+go-quickstart is a small layer over the standard http library in Go to make building routes and chaining middleware as simple as possible
 
 ## Requirements
-
-go-quickstart requires Go version 1.22.0 or greater
+Go version 1.22.0 or greater required
 
 ## Installation
-
-To install go-quickstart, do the following:
-
-1. Create a directory
-
+Clone the repo:
 ```bash
-mkdir myapp
-cd myapp
+git clone https://github.com/phillip-england/go-quickstart <your-app-name>
 ```
-
-2. Clone the repo
-
-```bash
-git clone https://github.com/phillip-england/go-quickstart .
-```
-
-3. Run the server
-
-```bash
-go run main.go
-```
-
-4. Visit localhost:8080
-
-That's it, you're up and running!
 
 ## Serving
-
-To serve the application, simply run:
-
+From the root of your app run:
 ```bash
 go run main.go
 ```
+The application server on `localhost:8080` by default. This can be easliy changed in `main.go`.
 
-## Custom Middleware
+## Features
+Here is an overview of the provided features.
 
-go-quickstart comes with a custom middleware implemenatation. Instead of deeply nesting all of your middleware logic, go-quickstart enables you to chain middleware to your routes using the `Chain` func found in `/internal/middleware/middleware.go`.
-
-### Creating Custom Middleware
-
-To create a new custom middleware, let's head over to `/internal/middleware/middleware.go`.
-
+### Router
+A router can be created:
 ```go
-type CustomContext struct {
+r, err := route.NewRouter()
+if err != nil {
+    panic(err)
+}
+```
+
+Routes can be added:
+```go
+r.Add("GET /", handler.HandleHome)
+```
+
+Then serve your app:
+```go
+port := "8080"
+r.Serve(port, fmt.Sprintf("Server is running on port %s", port))
+```
+
+### Handlers
+Here is a simple `Handler`:
+```go
+func HandleHome(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
+	err := httpContext.Templates.ExecuteTemplate(w, "base.html", templates.BasePageData{
+		Title:   "Home",
+		Content: templates.ExecuteTemplate(httpContext.Templates, "hello-world.html", nil),
+	})
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
+```
+
+It simply executes a few templates found in `/html` and checks for any errors.
+
+
+Handlers are functions with the following definition:
+```go
+type HandlerFunc func(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request)
+```
+
+Notice how the `HandlerFunc` takes in a `*httpcontext.Context`? This just enables you to share data between your middleware and handler.
+
+To add more values to your context, simply update `./internal/httpcontext/httpcontext.go`:
+```go
+type Context struct {
 	context.Context
 	Templates *template.Template
 	StartTime time.Time
+    NewContextValue string // new value added
 }
+```
 
-type CustomHandler func(ctx *CustomContext, w http.ResponseWriter, r *http.Request)
-type CustomMiddleware func(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error
+Now the `NewContextValue` can be set and shared amoung your middleware and handler.
 
-func Chain(w http.ResponseWriter, r *http.Request, templates *template.Template, handler CustomHandler, middleware ...CustomMiddleware) {
-	customContext := &CustomContext{
-		Context:   context.Background(),
-		Templates: templates,
-		StartTime: time.Now(),
-	}
-	for _, mw := range middleware {
-		err := mw(customContext, w, r)
-		if err != nil {
-			return
-		}
-	}
-	handler(customContext, w, r)
-	Log(customContext, w, r)
-}
+### Middleware
 
-func Log(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error {
-	elapsedTime := time.Since(ctx.StartTime)
-	formattedTime := time.Now().Format("2006-01-02 15:04:05")
-	fmt.Printf("[%s] [%s] [%s] [%s]\n", formattedTime, r.Method, r.URL.Path, elapsedTime)
+Middleware can be "chained" onto handlers:
+```go
+func CustomMiddleware(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error {
+	fmt.Println("Executing custom middleware")
 	return nil
 }
+
+r.Add("GET /", handler.HandleHome, CustomMiddleware) // chaining middleware
 ```
 
-You can already see the middleware func `Log` defined at the bottom of the file. Let's define a new middleware called `HelloWorld`.
-
-At the bottom of the file, write:
-
+You can even chain the same middleware multiple times:
 ```go
-func HelloWorld(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error {
-	fmt.Println("Hello, World")
-	return nil
-}
+r.Add("GET /", handler.HandleHome, CustomMiddleware, CustomMiddleware)
 ```
-
-Now, take note. All custom middleware must take in `*CustomContext`, `http.ResponseWriter`, and `*http.Request` as parameters. This is what defines the func as a custom middleware.
-
-### Using Custom Middleware
-
-To use the custom middleware, lets take a look at `main.go`:
-
-```go
-func main() {
-    // ...
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-        // handles 404 errors
-        // only required on the "/" endpoint
-        if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		middleware.Chain(w, r, templates, HandlerHome)
-	})
-}
-```
-
-Now, let's add our new `HelloWorld` middleware to the chain.
-
-```go
-middleware.Chain(w, r, templates, HandlerHome, middleware.HelloWorld)
-```
-
-That's it! You've created a new custom middleware and added it to the "/" endpoint.
-
-Serve the application with `go run main.go` and visit localhost:8080. You should see the following output printed to the console:
-
-```bash
-Hello, World
-```
-
-### Middleware Errors
-
-If a middleware returns an error, it will be handled in the `Chain` func. This enables you to stop execution and handle errors with ease.
-
-Let's look at the `Chain` func in, `/internal/middleware/middleware.go`:
-
-```go
-func Chain(w http.ResponseWriter, r *http.Request, templates *template.Template, handler CustomHandler, middleware ...CustomMiddleware) {
-	customContext := &CustomContext{
-		Context:   context.Background(),
-		Templates: templates,
-		StartTime: time.Now(),
-	}
-	for _, mw := range middleware {
-		err := mw(customContext, w, r)
-		if err != nil {
-			return
-		}
-	}
-	handler(customContext, w, r)
-	Log(customContext, w, r)
-}
-```
-
-Zooming in to where we handle potential middleware errors:
-
-```go
-for _, mw := range middleware {
-    err := mw(customContext, w, r)
-    if err != nil {
-        return // if an error occurs, do not run the handler
-    }
-    handler(customContext, w, r)
-}
-```
-
-## Parsing Templates
-
-go-quickstart already handles parsing all of your templates at `/html`. It does so with the `ParseTemplates` func found at `/internal/filehandler/filehandler.go`.
-
-Just stash new templates anywhere in `/html` and they will be parsed at the start of your programs execution.
-
-
