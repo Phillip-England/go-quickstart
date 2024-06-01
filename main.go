@@ -2,39 +2,23 @@ package main
 
 import (
 	"fmt"
-	"go-quickstart/internal/filehandler"
 	"go-quickstart/internal/handler"
-	"go-quickstart/internal/middleware"
-	"net/http"
+	"go-quickstart/internal/route"
 )
 
 func main() {
 
-	port := "8080"
-	templates, err := filehandler.ParseTemplates()
+	r, err := route.NewRouter()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	mux := http.NewServeMux()
+	r.Add("GET /", handler.HandleHome)
+	r.Add("GET /favicon.ico", handler.HandleFavicon)
+	r.Add("GET /static/", handler.HandleStatic)
 
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		middleware.Chain(w, r, templates, handler.HandleHome)
-	})
+	port := "8080"
+	r.Serve(port, fmt.Sprintf("Server is running on port %s", port))
 
-	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		middleware.Chain(w, r, templates, handler.HandleFavicon)
-	})
-
-	mux.HandleFunc("GET /static/", func(w http.ResponseWriter, r *http.Request) {
-		middleware.Chain(w, r, templates, handler.HandleStatic)
-	})
-
-	fmt.Println("Running Development Server on localhost:" + port)
-	http.ListenAndServe(":"+port, mux)
 }

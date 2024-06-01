@@ -3,22 +3,18 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"go-quickstart/internal/handler"
+	"go-quickstart/internal/httpcontext"
 	"html/template"
 	"net/http"
 	"time"
 )
 
-type CustomContext struct {
-	context.Context
-	Templates *template.Template
-	StartTime time.Time
-}
+type MiddlewareFunc func(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error
+type MiddlewareChainFunc func(w http.ResponseWriter, r *http.Request, templates *template.Template, handler handler.HandlerFunc, middleware ...MiddlewareFunc)
 
-type CustomHandler func(ctx *CustomContext, w http.ResponseWriter, r *http.Request)
-type CustomMiddleware func(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error
-
-func Chain(w http.ResponseWriter, r *http.Request, templates *template.Template, handler CustomHandler, middleware ...CustomMiddleware) {
-	customContext := &CustomContext{
+func Chain(w http.ResponseWriter, r *http.Request, templates *template.Template, handler handler.HandlerFunc, middleware ...MiddlewareFunc) {
+	customContext := &httpcontext.Context{
 		Context:   context.Background(),
 		Templates: templates,
 		StartTime: time.Now(),
@@ -33,7 +29,7 @@ func Chain(w http.ResponseWriter, r *http.Request, templates *template.Template,
 	Log(customContext, w, r)
 }
 
-func Log(ctx *CustomContext, w http.ResponseWriter, r *http.Request) error {
+func Log(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error {
 	elapsedTime := time.Since(ctx.StartTime)
 	formattedTime := time.Now().Format("2006-01-02 15:04:05")
 	fmt.Printf("[%s] [%s] [%s] [%s]\n", formattedTime, r.Method, r.URL.Path, elapsedTime)

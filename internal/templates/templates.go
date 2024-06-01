@@ -1,4 +1,4 @@
-package filehandler
+package templates
 
 import (
 	"bytes"
@@ -6,6 +6,11 @@ import (
 	"os"
 	"path/filepath"
 )
+
+type BasePageData struct {
+	Title   string
+	Content template.HTML
+}
 
 func ParseTemplates() (*template.Template, error) {
 	templates := template.New("")

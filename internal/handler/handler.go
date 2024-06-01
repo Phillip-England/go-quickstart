@@ -2,29 +2,30 @@ package handler
 
 import (
 	"fmt"
-	"go-quickstart/internal/filehandler"
-	"go-quickstart/internal/middleware"
-	"go-quickstart/internal/stypes"
+	"go-quickstart/internal/httpcontext"
+	"go-quickstart/internal/templates"
 	"net/http"
 	"path/filepath"
 )
 
-func HandleFavicon(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+type HandlerFunc func(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request)
+
+func HandleFavicon(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
 	filePath := "favicon.ico"
 	fullPath := filepath.Join(".", ".", filePath)
 	http.ServeFile(w, r, fullPath)
 }
 
-func HandleStatic(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
+func HandleStatic(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Path[len("/static/"):]
 	fullPath := filepath.Join(".", "static", filePath)
 	http.ServeFile(w, r, fullPath)
 }
 
-func HandleHome(customContext *middleware.CustomContext, w http.ResponseWriter, r *http.Request) {
-	err := customContext.Templates.ExecuteTemplate(w, "base.html", stypes.BasePageData{
+func HandleHome(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
+	err := httpContext.Templates.ExecuteTemplate(w, "base.html", templates.BasePageData{
 		Title:   "Home",
-		Content: filehandler.ExecuteTemplate(customContext.Templates, "hello-world.html", nil),
+		Content: templates.ExecuteTemplate(httpContext.Templates, "hello-world.html", nil),
 	})
 	if err != nil {
 		fmt.Println(err)
