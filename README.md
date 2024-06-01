@@ -4,6 +4,11 @@ go-quickstart is a small layer over the standard http library in Go to make buil
 ## Requirements
 Go version 1.22.0 or greater required
 
+### Tailwind
+This repo comes with a script to run tailwind at `/tailwind.sh` but you'll need to install the [tailwind binary](https://tailwindcss.com/blog/standalone-cli) and place it somewhere on your system's PATH.
+
+Make sure the binary is named, `tailwindcss`.
+
 ## Installation
 Clone the repo:
 ```bash
@@ -93,4 +98,18 @@ r.Add("GET /", handler.HandleHome, CustomMiddleware) // chaining middleware
 You can even chain the same middleware multiple times:
 ```go
 r.Add("GET /", handler.HandleHome, CustomMiddleware, CustomMiddleware)
+```
+
+The definition for `MiddlewareFunc` is exactly like `HandlerFunc` except `MiddlewareFunc` can return an error:
+```go
+type MiddlewareFunc func(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error
+```
+
+If a `MiddlewareFunc` returns an error, the request/response cycle will exit:
+```go
+func ExitMiddleware(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error {
+	w.Write([]byte("exiting from middleware\n"))
+	return errors.New("exit!")
+}
+r.Add("GET /exit", handler.HandleHome, CustomMiddleware, ExitMiddleware)
 ```
