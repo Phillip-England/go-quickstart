@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"fmt"
+	"go-quickstart/internal/component"
 	"go-quickstart/internal/httpcontext"
 	"go-quickstart/internal/templates"
 	"net/http"
@@ -10,26 +10,29 @@ import (
 
 type HandlerFunc func(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request)
 
-func HandleFavicon(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
+func Favicon(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
 	filePath := "favicon.ico"
 	fullPath := filepath.Join(".", ".", filePath)
 	http.ServeFile(w, r, fullPath)
 }
 
-func HandleStatic(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
+func Static(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Path[len("/static/"):]
 	fullPath := filepath.Join(".", "static", filePath)
 	http.ServeFile(w, r, fullPath)
 }
 
-func HandleHome(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
-	err := httpContext.Templates.ExecuteTemplate(w, "base.html", templates.BasePageData{
-		Title:   "Home",
-		Content: templates.ExecuteTemplate(httpContext.Templates, "hello-world.html", nil),
-	})
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+func PageHome(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
+	loginErr := r.URL.Query().Get("loginErr")
+	email := r.URL.Query().Get("email")
+	password := r.URL.Query().Get("password")
+	w.Write([]byte(templates.Guest("Home", `
+		`+component.LoginForm(email, password, loginErr)+`
+	`)))
+}
+
+func PageAdminPanel(httpContext *httpcontext.Context, w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(templates.Admin("Admin Panel", `
+		<h1>Admin Panel</h1>
+	`)))
 }

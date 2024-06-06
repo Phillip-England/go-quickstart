@@ -1,46 +1,50 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"go-quickstart/internal/appform"
+	"go-quickstart/internal/database"
 	"go-quickstart/internal/handler"
-	"go-quickstart/internal/httpcontext"
+	"go-quickstart/internal/middleware"
 	"go-quickstart/internal/route"
-	"net/http"
+	"log"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 
-	// creating a new router
+	_ = godotenv.Load()
+
+	db, err := sqlx.Connect("sqlite3", "main.db")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+
+	err = database.CreateTables(db)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	database.PrintTables(db)
+
 	r, err := route.NewRouter()
 	if err != nil {
 		panic(err)
 	}
 
-	// handling favicon and static files
-	r.Add("GET /favicon.ico", handler.HandleFavicon)
-	r.Add("GET /static/", handler.HandleStatic)
+	r.Add("GET /favicon.ico", handler.Favicon)
+	r.Add("GET /static/", handler.Static)
 
-	// handling home page
-	r.Add("GET /", handler.HandleHome, CustomMiddleware) // chaining middleware
+	r.Add("GET /", handler.PageHome, middleware.IsNotGuest)
+	r.Add("GET /admin", handler.PageAdminPanel)
 
-	// handling page to demonstrate exiting early from middleware
-	r.Add("GET /exit", handler.HandleHome, CustomMiddleware, ExitMiddleware) // chaining middleware
+	r.Add("POST /", appform.Login)
 
-	// serving at 8080
 	port := "8080"
 	r.Serve(port, fmt.Sprintf("Server is running on port %s", port))
 
-}
-
-// a custom middleware
-func CustomMiddleware(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error {
-	fmt.Println("Executing custom middleware")
-	return nil
-}
-
-// a custom middleware that exits early
-func ExitMiddleware(ctx *httpcontext.Context, w http.ResponseWriter, r *http.Request) error {
-	w.Write([]byte("exiting from middleware\n"))
-	return errors.New("exit!")
 }

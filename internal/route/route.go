@@ -4,25 +4,24 @@ import (
 	"fmt"
 	"go-quickstart/internal/handler"
 	"go-quickstart/internal/middleware"
-	"go-quickstart/internal/templates"
 	"html/template"
 	"net/http"
 )
 
 type Router struct {
-	Mux       *http.ServeMux
-	Templates *template.Template
+	Mux *http.ServeMux
+	// Templates *template.Template
 }
 
 func NewRouter() (*Router, error) {
-	templates, err := templates.ParseTemplates()
-	if err != nil {
-		return nil, err
+	// templates, err := templates.ParseTemplates()
+	// if err != nil {
+	// 	return nil, err
 
-	}
+	// }
 	return &Router{
-		Mux:       http.NewServeMux(),
-		Templates: templates,
+		Mux: http.NewServeMux(),
+		// Templates: templates,
 	}, nil
 }
 
@@ -32,10 +31,10 @@ func (r *Router) Add(path string, handler handler.HandlerFunc, middleware ...mid
 		isIndex = true
 	}
 	route := &Route{
-		mux:        r.Mux,
-		path:       path,
-		handler:    handler,
-		templates:  r.Templates,
+		mux:     r.Mux,
+		path:    path,
+		handler: handler,
+		// templates:  r.Templates,
 		middleware: middleware,
 		isIndex:    isIndex,
 	}
